@@ -1,6 +1,5 @@
 package com.assignment.controller;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,19 +25,18 @@ public class DepartmentController {
 
 	@Autowired
 	private DepartmentService departmentService;
-	
+
 	Logger log = LoggerFactory.getLogger(EmployeeController.class);
 
-	
-	//Dto to Entity
+	// Dto to Entity
 	public Department dtoToEntity(DepartmentDto departmentDto) {
 		Department dep = new Department();
 		dep.setName(departmentDto.getName());
 		dep.setDescription(departmentDto.getDescription());
-		//dep.setEmployees(departmentDto.getEmployees());
+		// dep.setEmployees(departmentDto.getEmployees());
 		return dep;
-	} 
-	
+	}
+
 	/**
 	 * Create a new department.
 	 * 
@@ -49,36 +47,21 @@ public class DepartmentController {
 	@PostMapping(value = "/department/create")
 	public ResponseEntity<?> createDepartment(@RequestBody DepartmentDto departmentDto) {
 		log.info("Entry:: Create Department");
-		try {
-			return ResponseHandler.generateResponse("sucess", HttpStatus.OK,
-					departmentService.createDepartment(departmentDto));
-		} catch (Exception e) {
-			/*
-			 * ( message; details; hint; nextActions; support; )
-			 */
-			throw new CustomException(e.getMessage(), "Error processing the request!",
-					"Exception from Create Department", "Ask your friends for access at https://www.unthinkable.co/",
-					"Reach out to https://www.unthinkable.co/web-mobile-application-development/ for more help");
-		}
+		return ResponseHandler.generateResponse("sucess", HttpStatus.OK,
+				departmentService.createDepartment(departmentDto));
 	}
-	
+
 	/**
 	 * Get the details of all the existing departments.
 	 * 
 	 * @return department details in JSON
 	 */
-	@GetMapping(value  = "/department/all")
-	public ResponseEntity<?> getDepartment(){
+	@GetMapping(value = "/department/all")
+	public ResponseEntity<?> getDepartment() {
 		log.info("Entry:: Get all departments detail");
-		try {
-			return ResponseHandler.generateResponse("success", HttpStatus.OK, departmentService.getDepartment());
-		} catch (Exception e) {
-			throw new CustomException(e.getMessage(), "Error processing the request!",
-					"Exception from GET Department", "Ask your friends for access at https://www.unthinkable.co/",
-					"Reach out to https://www.unthinkable.co/web-mobile-application-development/ for more help");
-			}
+		return ResponseHandler.generateResponse("success", HttpStatus.OK, departmentService.getDepartment());
 	}
-	
+
 	/**
 	 * Get the details of specific department.
 	 * 
@@ -88,51 +71,32 @@ public class DepartmentController {
 	@GetMapping("/department/details/{id}")
 	public ResponseEntity<?> getDepartment(@PathVariable Long id) {
 		log.info("Entry:: Get details of department by their Id");
-		try {
-			return ResponseHandler.generateResponse("success", HttpStatus.OK, departmentService.getDepartment(id));
-		} catch (Exception e) {
-			throw new CustomException(e.getMessage(), "Error processing the request!",
-					"Exception from Get Department", "Ask your friends for access at https://www.unthinkable.co/",
-					"Reach out to https://www.unthinkable.co/web-mobile-application-development/ for more help");
-		}
+		return ResponseHandler.generateResponse("success", HttpStatus.OK, departmentService.getDepartment(id));
 	}
-	
+
 	/**
-	 * If exist, update the department 
+	 * If exist, update the department
 	 * 
-	 * @param id Id of department
+	 * @param id            Id of department
 	 * @param departmentDto DepartmentDto entry of department
 	 * @return department detail in JSON
 	 */
 	@PutMapping("/department/update/{id}")
-	public ResponseEntity<?> updateDepartment(@PathVariable Long id, @RequestBody DepartmentDto departmentDto ){
+	public ResponseEntity<?> updateDepartment(@PathVariable Long id, @RequestBody DepartmentDto departmentDto) {
 		log.info("Entry:: Update Department");
-		try {
-			return ResponseHandler.generateResponse("Success", HttpStatus.OK,
-					departmentService.updateDepartment(id , departmentDto));
-		} catch (Exception e) {
-			throw new CustomException(e.getMessage(), "Error processing the request!",
-					"Exception from Update Department", "Ask your friends for access at https://www.unthinkable.co/",
-					"Reach out to https://www.unthinkable.co/web-mobile-application-development/ for more help");
-				}
+		return ResponseHandler.generateResponse("Success", HttpStatus.OK,
+				departmentService.updateDepartment(id, departmentDto));
 	}
-	
+
 	/**
-	 * If exist, delete the department 
+	 * If exist, delete the department
 	 * 
 	 * @param id Id of department
 	 */
 	@DeleteMapping(value = "/department/delete/{id}")
-	public ResponseEntity<?> deleteDepartment(@PathVariable Long id){
+	public ResponseEntity<?> deleteDepartment(@PathVariable Long id) {
 		log.info("Entry:: Delete Department");
-		try {
-			return ResponseHandler.generateResponse("Success", HttpStatus.OK,
-					departmentService.deleteDepartment(id));
-		} catch (Exception e) {
-			throw new CustomException(e.getMessage(), "Error processing the request!",
-					"Exception from Delete Department", "Ask your friends for access at https://www.unthinkable.co/",
-					"Reach out to https://www.unthinkable.co/web-mobile-application-development/ for more help");
-				}
+		return ResponseHandler.generateResponse("Success", HttpStatus.OK, departmentService.deleteDepartment(id));
 	}
-	
+
 }

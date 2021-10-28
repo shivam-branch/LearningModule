@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.assignment.CustomException;
 import com.assignment.dto.DepartmentDto;
 import com.assignment.entity.Department;
 import com.assignment.entity.Employee;
@@ -40,7 +41,7 @@ public class DepartmentService {
 //			}
 //		}
 
-		 departmentObj.setEmployees(department.getEmployees());
+		departmentObj.setEmployees(department.getEmployees());
 		return departmentObj;
 	}
 
@@ -50,110 +51,126 @@ public class DepartmentService {
 					.body("The same department is already present fail to create new department");
 		}
 		Department departmentobj = createNewDepartment(department);
-		 Department saveDepartment = departmentRepository.save(departmentobj);
+		Department saveDepartment = departmentRepository.save(departmentobj);
 		return ResponseEntity.ok("Department Created Successfully");
 	}
-	
+
 	public void updateDepartmentInExistingUser(Employee e, Department d) {
 		List<Department> depList = new ArrayList<>();
 		depList.add(d);
-		e.getDepartments().forEach(x-> {
+		e.getDepartments().forEach(x -> {
 			depList.add(x);
 		});
 		e.setDepartments(depList);
 		employeeRepository.save(e);
 	}
-	
-	public ResponseEntity<?> createNewDepartment(DepartmentDto departmentDto){
+
+	public ResponseEntity<?> createNewDepartment(DepartmentDto departmentDto) {
 		Department departmentObj = new Department();
 		departmentObj.setName(departmentDto.getName());
 		departmentObj.setDescription(departmentDto.getDescription());
-		
 
 		/*
-		 * check all employee exist in employee table 
-		 * if employeeIdslist size = 0 then make
-		 * department if employee doesn't exist return Bad request
-		 */		
-		List<Long> employeeIdsList =  departmentDto.getEmployees();
-		for(int i = 0; i<employeeIdsList.size();i++) {
-			if(!employeeRepository.findById(employeeIdsList.get(i)).isPresent()) {
-			return ResponseEntity.badRequest().body("The Employee Id "+ employeeIdsList.get(i)+ " is not present");	
+		 * check all employee exist in employee table if employeeIdslist size = 0 then
+		 * make department if employee doesn't exist return Bad request
+		 */
+		List<Long> employeeIdsList = departmentDto.getEmployees();
+		for (int i = 0; i < employeeIdsList.size(); i++) {
+			if (!employeeRepository.findById(employeeIdsList.get(i)).isPresent()) {
+				return ResponseEntity.badRequest()
+						.body("The Employee Id " + employeeIdsList.get(i) + " is not present");
 			}
 		}
-	
-		Department saveDepartment = departmentRepository.save(departmentObj);	
-		//check for employee
-		List<Long> employeeIdList =  departmentDto.getEmployees();
-		List<Employee> employeeList= new ArrayList<>();
-		for(int i = 0; i < employeeIdList.size(); i++) {
+
+		Department saveDepartment = departmentRepository.save(departmentObj);
+		// check for employee
+		List<Long> employeeIdList = departmentDto.getEmployees();
+		List<Employee> employeeList = new ArrayList<>();
+		for (int i = 0; i < employeeIdList.size(); i++) {
 			Optional<Employee> existingEmp = employeeRepository.findById(employeeIdList.get(i));
 			updateDepartmentInExistingUser(existingEmp.get(), saveDepartment);
-			employeeList.add(existingEmp.get());	
+			employeeList.add(existingEmp.get());
 
 		}
 		departmentObj.setEmployees(employeeList);
-		//Department saveDepartment = departmentRepository.save(departmentObj);
-		if(saveDepartment == null)
+		// Department saveDepartment = departmentRepository.save(departmentObj);
+		if (saveDepartment == null)
 			return ResponseEntity.unprocessableEntity().body("Failed creating Employee");
 		else
-		    return new ResponseEntity<DepartmentDto>(convertDepartmnetObjToDepartmentDto(saveDepartment), HttpStatus.OK);
+			return new ResponseEntity<DepartmentDto>(convertDepartmnetObjToDepartmentDto(saveDepartment),
+					HttpStatus.OK);
 	}
-	
+
 	@Transactional
 	public ResponseEntity<?> createDepartment(DepartmentDto departmentDto) {
-		if(departmentRepository.findByName(departmentDto.getName()).isPresent()) {
-			return ResponseEntity.badRequest()
-					.body("The department is already Present");
+		if (departmentRepository.findByName(departmentDto.getName()).isPresent()) {
+			return ResponseEntity.badRequest().body("The department is already Present");
 		}
-	 return createNewDepartment(departmentDto);
-
+		try {
+			return createNewDepartment(departmentDto);
+		} catch (Exception e) {
+			/*
+			 * ( message; details; hint; nextActions; support; )
+			 */
+			throw new CustomException(e.getMessage(), "Error processing the request!",
+					"Exception from Create Department", "Ask your friends for access at https://www.unthinkable.co/",
+					"Reach out to https://www.unthinkable.co/web-mobile-application-development/ for more help");
+		}
 	}
 
 	/*
-	 * for get Department request.
-	 * Convert all the department Object into the departmentDto 
-	 */	
+	 * for get Department request. Convert all the department Object into the
+	 * departmentDto
+	 */
 	public ResponseEntity<DepartmentDto> getDepartment() {
-		List<Department> departmentList = departmentRepository.findAll();
-		List<DepartmentDto> departmentDtoList = new ArrayList<>();
-		departmentList.forEach(x -> {
-			DepartmentDto departmentdtoObj = new DepartmentDto();
-			departmentdtoObj.setId(x.getId());
-			departmentdtoObj.setName(x.getName());
-			departmentdtoObj.setDescription(x.getDescription());
-			departmentdtoObj
-					.setEmployees(x.getEmployees().stream().map(ele -> ele.getId()).collect(Collectors.toList()));
-			departmentDtoList.add(departmentdtoObj);
-		});
-		return new ResponseEntity(departmentDtoList, HttpStatus.OK);
-	}
-	
-	public ResponseEntity<?> getDepartment(Long id) {
-		Optional<Department> requiredDepartment = departmentRepository.findById(id);
-		if (requiredDepartment.isPresent()) {
-			Department obj = requiredDepartment.get();
-			DepartmentDto dep =  convertDepartmnetObjToDepartmentDto(obj);
-			return new ResponseEntity<DepartmentDto>(dep, HttpStatus.OK);
+		try {
+			List<Department> departmentList = departmentRepository.findAll();
+			List<DepartmentDto> departmentDtoList = new ArrayList<>();
+			departmentList.forEach(x -> {
+				DepartmentDto departmentdtoObj = new DepartmentDto();
+				departmentdtoObj.setId(x.getId());
+				departmentdtoObj.setName(x.getName());
+				departmentdtoObj.setDescription(x.getDescription());
+				departmentdtoObj
+						.setEmployees(x.getEmployees().stream().map(ele -> ele.getId()).collect(Collectors.toList()));
+				departmentDtoList.add(departmentdtoObj);
+			});
+			return new ResponseEntity(departmentDtoList, HttpStatus.OK);
+		} catch (Exception e) {
+			throw new CustomException(e.getMessage(), "Error processing the request!", "Exception from GET Department",
+					"Ask your friends for access at https://www.unthinkable.co/",
+					"Reach out to https://www.unthinkable.co/web-mobile-application-development/ for more help");
 		}
-			
-		else
-			return ResponseEntity.badRequest()
-					.body("The department is not Present");
 	}
-	
+
+	public ResponseEntity<?> getDepartment(Long id) {
+		try {
+			Optional<Department> requiredDepartment = departmentRepository.findById(id);
+			if (requiredDepartment.isPresent()) {
+				Department obj = requiredDepartment.get();
+				DepartmentDto dep = convertDepartmnetObjToDepartmentDto(obj);
+				return new ResponseEntity<DepartmentDto>(dep, HttpStatus.OK);
+			}
+
+			else
+				return ResponseEntity.badRequest().body("The department is not Present");
+		} catch (Exception e) {
+			throw new CustomException(e.getMessage(), "Error processing the request!", "Exception from Get Department",
+					"Ask your friends for access at https://www.unthinkable.co/",
+					"Reach out to https://www.unthinkable.co/web-mobile-application-development/ for more help");
+		}
+	}
+
 	public DepartmentDto convertDepartmnetObjToDepartmentDto(Department obj) {
 		DepartmentDto departmentDto = new DepartmentDto();
 		departmentDto.setId(obj.getId());
 		departmentDto.setName(obj.getName());
 		departmentDto.setDescription(obj.getDescription());
-		departmentDto.setEmployees(obj.getEmployees().stream()
-				.map(element -> element.getId())
-				.collect(Collectors.toList()));
+		departmentDto
+				.setEmployees(obj.getEmployees().stream().map(element -> element.getId()).collect(Collectors.toList()));
 		return departmentDto;
 	}
-	
-	
+
 	/*
 	 * Update department
 	 */
@@ -172,47 +189,61 @@ public class DepartmentService {
 		} else
 			return ResponseEntity.unprocessableEntity().body("Specified Department not found");
 	}
-	
+
 	public ResponseEntity<?> updateDepartment(Long id, DepartmentDto departmentDto) {
-		Optional<Department> dep = departmentRepository.findById(id);
-		if (dep.isPresent()) {
-			Department newDepartment = dep.get();
-			newDepartment.setName(departmentDto.getName() != null ? departmentDto.getName() : newDepartment.getName());
-			newDepartment.setDescription(departmentDto.getDescription() != null ? departmentDto.getDescription()
-					: newDepartment.getDescription());
+		try {
+			Optional<Department> dep = departmentRepository.findById(id);
+			if (dep.isPresent()) {
+				Department newDepartment = dep.get();
+				newDepartment
+						.setName(departmentDto.getName() != null ? departmentDto.getName() : newDepartment.getName());
+				newDepartment.setDescription(departmentDto.getDescription() != null ? departmentDto.getDescription()
+						: newDepartment.getDescription());
 
-			Department saveDepartment = departmentRepository.save(newDepartment);
+				Department saveDepartment = departmentRepository.save(newDepartment);
 
-			// check for employee
-			List<Long> employeeIdList = departmentDto.getEmployees();
-			List<Employee> employeeList = new ArrayList<>();
-			for (int i = 0; i < employeeIdList.size(); i++) {
-				Optional<Employee> existingEmp = employeeRepository.findById(employeeIdList.get(i));
-				if (!existingEmp.isPresent()) {
-					return ResponseEntity.badRequest().body("the employee is not present fail to create an department");
+				// check for employee
+				List<Long> employeeIdList = departmentDto.getEmployees();
+				List<Employee> employeeList = new ArrayList<>();
+				for (int i = 0; i < employeeIdList.size(); i++) {
+					Optional<Employee> existingEmp = employeeRepository.findById(employeeIdList.get(i));
+					if (!existingEmp.isPresent()) {
+						return ResponseEntity.badRequest()
+								.body("the employee is not present fail to create an department");
+					}
+					updateDepartmentInExistingUser(existingEmp.get(), saveDepartment);
+					employeeList.add(existingEmp.get());
+
 				}
-				updateDepartmentInExistingUser(existingEmp.get(), saveDepartment);
-				employeeList.add(existingEmp.get());
 
+				return getDepartment(id);
+			} else {
+				return ResponseEntity.unprocessableEntity().body("Cannot find the department ");
 			}
-			
-			return getDepartment(id);
-		} else {
-			return ResponseEntity.unprocessableEntity().body("Cannot find the department ");
+		} catch (Exception e) {
+			throw new CustomException(e.getMessage(), "Error processing the request!",
+					"Exception from Update Department", "Ask your friends for access at https://www.unthinkable.co/",
+					"Reach out to https://www.unthinkable.co/web-mobile-application-development/ for more help");
 		}
 	}
-	
+
 	@Transactional
 	public ResponseEntity<?> deleteDepartment(Long id) {
-		Optional<Department> dep = departmentRepository.findById(id);
-		if (dep.isPresent()) {
-			if (dep.get().getEmployees().size() == 0) {
-				departmentRepository.deleteById(dep.get().getId());
-				return ResponseEntity.ok("Department deleted successfully");
+		try {
+			Optional<Department> dep = departmentRepository.findById(id);
+			if (dep.isPresent()) {
+				if (dep.get().getEmployees().size() == 0) {
+					departmentRepository.deleteById(dep.get().getId());
+					return ResponseEntity.ok("Department deleted successfully");
+				} else
+					return ResponseEntity.unprocessableEntity()
+							.body("Failed to delete,  Please delete the employee associated with this department");
 			} else
-				return ResponseEntity.unprocessableEntity()
-						.body("Failed to delete,  Please delete the employee associated with this department");
-		} else
-			return ResponseEntity.unprocessableEntity().body("Department of this ID is not present");
+				return ResponseEntity.unprocessableEntity().body("Department of this ID is not present");
+		} catch (Exception e) {
+			throw new CustomException(e.getMessage(), "Error processing the request!",
+					"Exception from Delete Department", "Ask your friends for access at https://www.unthinkable.co/",
+					"Reach out to https://www.unthinkable.co/web-mobile-application-development/ for more help");
+		}
 	}
 }
